@@ -9,6 +9,8 @@ class Senoidal:
 
     def __init__(self):
         self.population = []
+        self.best_x = None
+        self.best_y = None
 
     def get_value(self, x):
         return x * math.sin(10 * math.pi * x) + 5
@@ -32,15 +34,15 @@ class Senoidal:
     def use_candidate(self, index):
         self.population[index] = self.candidate
 
-    def get_maximum(self):
-        max = self.population[0]
-        index = 0
+    def update_best(self):
         for i, atom in enumerate(self.population):
             val = self.get_value(atom)
-            if (val > max):
-                max = val
-                index = i
-        return self.population[index], max
+            if (val > self.best_y):
+                self.best_x = self.population[i]
+                self.best_y = val
+
+    def get_best(self):
+        return self.best_x, self.best_y
 
 
 class Solver:
@@ -67,6 +69,7 @@ class Solver:
                         rnd = random.uniform(0.0, 1.0)
                         if (rnd < math.exp(energy_delta / t)):
                             self.problem.use_candidate(index)
+                self.problem.update_best()
             t = t * self.alpha
 
 
@@ -86,14 +89,14 @@ except ValueError:
     atoms_count = 10
 
 try:
-    lower_bound = float(raw_input('Lower bound [27]: '))
+    lower_bound = float(raw_input('Lower bound [0.1]: '))
 except ValueError:
-    lower_bound = 27
+    lower_bound = 0.1
 
 try:
-    upper_bound = float(raw_input('Upper bound [1538]:'))
+    upper_bound = float(raw_input('Upper bound [100]:'))
 except ValueError:
-    upper_bound = 1538
+    upper_bound = 100
 
 try:
     lower_perturbation = float(raw_input('Lower perturbation [-1.0]: '))
@@ -111,7 +114,7 @@ senoidal_problem.generate_initial_population(atoms_count)
 solver = Solver(senoidal_problem, repetitions, alpha, lower_bound, upper_bound, lower_perturbation, upper_perturbation)
 solver.maximize()
 
-x, y = senoidal_problem.get_maximum()
+x, y = senoidal_problem.get_best()
 
 print("x: " + str(x))
 print("y: " + str(y))
