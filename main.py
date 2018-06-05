@@ -2,33 +2,33 @@ import math
 import random
 
 
-class Senoidal:
-    LOWER_INTERVAL = 0.0
-
-    UPPER_INTERVAL = 4.0
+class Problem:
 
     def __init__(self):
         self.population = []
-        self.best_x = None
-        self.best_y = None
-
-    def get_value(self, x):
-        return x * math.sin(10 * math.pi * x) + 5
-
-    def generate_initial_population(self, size):
-        for i in range(0, size):
-            rand_num = random.uniform(self.LOWER_INTERVAL, self.UPPER_INTERVAL)
-            self.population.append(rand_num)
+        self.best_atom = None
+        self.best_f = None
 
     def print_atoms(self):
         print(self.population)
 
+    def getLowerInterval(self):
+        pass
+
+    def getUpperInterval(self):
+        pass
+
+    def get_value(self, atom):
+        pass
+
     def perturbate(self, index, lower_perturbation, upper_perturbation):
-        self.candidate = self.population[index] + random.uniform(lower_perturbation, upper_perturbation)
-        if (self.candidate > self.UPPER_INTERVAL):
-            self.candidate = self.UPPER_INTERVAL
-        elif (self.candidate < self.LOWER_INTERVAL):
-            self.candidate = self.LOWER_INTERVAL
+        self.candidate = dict()
+        for key in self.population[index]:
+            self.candidate[key] = self.population[index][key] + random.uniform(lower_perturbation, upper_perturbation)
+            if (self.candidate[key] > self.getUpperInterval()):
+                self.candidate[key] = self.getUpperInterval()
+            elif (self.candidate[key] < self.getLowerInterval()):
+                self.candidate[key] = self.getLowerInterval()
         return self.candidate
 
     def use_candidate(self, index):
@@ -37,12 +37,29 @@ class Senoidal:
     def update_best(self):
         for i, atom in enumerate(self.population):
             val = self.get_value(atom)
-            if (val > self.best_y):
-                self.best_x = self.population[i]
-                self.best_y = val
+            if (val > self.best_f):
+                self.best_atom = self.population[i]
+                self.best_f = val
 
     def get_best(self):
-        return self.best_x, self.best_y
+        return self.best_atom, self.best_f
+
+
+class Senoidal(Problem):
+
+    def getLowerInterval(self):
+        return 0.0
+
+    def getUpperInterval(self):
+        return 4.0
+
+    def get_value(self, atom):
+        return atom['x'] * math.sin(10 * math.pi * atom['x']) + 5
+
+    def generate_initial_population(self, size):
+        for i in range(0, size):
+            rand_num = random.uniform(self.getLowerInterval(), self.getUpperInterval())
+            self.population.append({'x': rand_num})
 
 
 class Solver:
@@ -62,7 +79,7 @@ class Solver:
             for i in range(1, self.repetitions):
                 for index, atom in enumerate(self.problem.population):
                     candidate = self.problem.perturbate(index, self.lower_perturbation, self.upper_perturbation)
-                    energy_delta = candidate - atom
+                    energy_delta = self.problem.get_value(candidate) - self.problem.get_value(atom)
                     if energy_delta >= 0:
                         self.problem.use_candidate(index)
                     else:
@@ -114,7 +131,8 @@ senoidal_problem.generate_initial_population(atoms_count)
 solver = Solver(senoidal_problem, repetitions, alpha, lower_bound, upper_bound, lower_perturbation, upper_perturbation)
 solver.maximize()
 
-x, y = senoidal_problem.get_best()
+atom, f = senoidal_problem.get_best()
 
-print("x: " + str(x))
-print("y: " + str(y))
+# Print senoidal result
+print(atom)
+print("f(x): " + str(f))
