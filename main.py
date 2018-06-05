@@ -21,24 +21,53 @@ class Senoidal:
     def print_atoms(self):
         print(self.population)
 
-    def perturbate(self, lower_perturbation, upper_perturbation):
+    def perturbate(self, index, lower_perturbation, upper_perturbation):
+        self.candidate = self.population[index] + random.uniform(lower_perturbation, upper_perturbation)
+        if (self.candidate > self.UPPER_INTERVAL):
+            self.candidate = self.UPPER_INTERVAL
+        elif (self.candidate < self.LOWER_INTERVAL):
+            self.candidate = self.LOWER_INTERVAL
+        return self.candidate
+
+    def use_candidate(self, index):
+        self.population[index] = self.candidate
+
+    def get_maximum(self):
+        max = self.population[0]
+        index = 0
         for i, atom in enumerate(self.population):
-            self.population[i] = atom + random.uniform(lower_perturbation, upper_perturbation)
+            val = self.get_value(atom)
+            if (val > max):
+                max = val
+                index = i
+        return self.population[index], max
 
 
 class Solver:
-    def __init__(self, problem, lower_bound, upper_bound, lower_perturbation, upper_perturbation):
+    def __init__(self, problem, repetitions, alpha, lower_bound, upper_bound, lower_perturbation, upper_perturbation):
         self.problem = problem
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         self.lower_perturbation = lower_perturbation
         self.upper_perturbation = upper_perturbation
+        self.repetitions = repetitions
+        self.alpha = alpha
 
-    def perturbate_current(self):
-        self.problem.perturbate(self.lower_perturbation, self.upper_perturbation)
-
-    def run(self):
-        self.perturbate_current()
+    def maximize(self):
+        t = self.upper_bound
+        t_min = self.lower_bound
+        while t > t_min:
+            for i in range(1, self.repetitions):
+                for index, atom in enumerate(self.problem.population):
+                    candidate = self.problem.perturbate(index, self.lower_perturbation, self.upper_perturbation)
+                    energy_delta = candidate - atom
+                    if energy_delta >= 0:
+                        self.problem.use_candidate(index)
+                    else:
+                        rnd = random.uniform(0.0, 1.0)
+                        if (rnd < math.exp(energy_delta / t)):
+                            self.problem.use_candidate(index)
+            t = t * self.alpha
 
 
 try:
@@ -79,5 +108,10 @@ except ValueError:
 senoidal_problem = Senoidal()
 senoidal_problem.generate_initial_population(atoms_count)
 
-solver = Solver(senoidal_problem, lower_bound, upper_bound, lower_perturbation, upper_perturbation)
-solver.run()
+solver = Solver(senoidal_problem, repetitions, alpha, lower_bound, upper_bound, lower_perturbation, upper_perturbation)
+solver.maximize()
+
+x, y = senoidal_problem.get_maximum()
+
+print("x: " + str(x))
+print("y: " + str(y))
