@@ -25,10 +25,10 @@ class Problem:
         self.candidate = dict()
         for key in self.population[index]:
             self.candidate[key] = self.population[index][key] + random.uniform(lower_perturbation, upper_perturbation)
-            if (self.candidate[key] > self.getUpperInterval()):
-                self.candidate[key] = self.getUpperInterval()
-            elif (self.candidate[key] < self.getLowerInterval()):
-                self.candidate[key] = self.getLowerInterval()
+            if (self.candidate[key] > self.getUpperInterval()[key]):
+                self.candidate[key] = self.getUpperInterval()[key]
+            elif (self.candidate[key] < self.getLowerInterval()[key]):
+                self.candidate[key] = self.getLowerInterval()[key]
         return self.candidate
 
     def use_candidate(self, index):
@@ -48,18 +48,47 @@ class Problem:
 class Senoidal(Problem):
 
     def getLowerInterval(self):
-        return 0.0
+        return {'x': 0.0}
 
     def getUpperInterval(self):
-        return 4.0
+        return {'x': 4.0}
 
     def get_value(self, atom):
         return atom['x'] * math.sin(10 * math.pi * atom['x']) + 5
 
     def generate_initial_population(self, size):
         for i in range(0, size):
-            rand_num = random.uniform(self.getLowerInterval(), self.getUpperInterval())
+            lower = self.getLowerInterval()
+            upper = self.getUpperInterval()
+            rand_num = random.uniform(lower['x'], upper['x'])
             self.population.append({'x': rand_num})
+
+
+class QuadriGaussian(Problem):
+
+    def getLowerInterval(self):
+        return {'x': -5.0, 'y': 5.0}
+
+    def getUpperInterval(self):
+        return {'x': -5.0, 'y': 5.0}
+
+    def get_value(self, atom):
+        a = 0.97 * math.exp(- (math.pow(atom['x'] + 3, 2) + math.pow(atom['y'] + 3, 2)) / 5)
+        b = 0.98 * math.exp(- (math.pow(atom['x'] + 3, 2) + math.pow(atom['y'] - 3, 2)) / 5)
+        c = 0.99 * math.exp(- (math.pow(atom['x'] - 3, 2) + math.pow(atom['y'] + 3, 2)) / 5)
+        d = 1.00 * math.exp(- (math.pow(atom['x'] - 3, 2) + math.pow(atom['y'] - 3, 2)) / 5)
+        return a + b + c + d
+
+    def generate_initial_population(self, size):
+        lower = self.getLowerInterval()
+        upper = self.getUpperInterval()
+        for i in range(0, size):
+            new_atom = dict()
+            rand_num = random.uniform(lower['x'], upper['x'])
+            new_atom['x'] = rand_num
+            rand_num = random.uniform(lower['y'], upper['y'])
+            new_atom['y'] = rand_num
+            self.population.append(new_atom)
 
 
 class Solver:
@@ -125,6 +154,8 @@ try:
 except ValueError:
     upper_perturbation = 1.0
 
+# Senoidal
+
 senoidal_problem = Senoidal()
 senoidal_problem.generate_initial_population(atoms_count)
 
@@ -133,6 +164,18 @@ solver.maximize()
 
 atom, f = senoidal_problem.get_best()
 
-# Print senoidal result
 print(atom)
 print("f(x): " + str(f))
+
+# QuadriGaussian
+
+quadri_gaussian = QuadriGaussian()
+quadri_gaussian.generate_initial_population(atoms_count)
+
+solver = Solver(quadri_gaussian, repetitions, alpha, lower_bound, upper_bound, lower_perturbation, upper_perturbation)
+solver.maximize()
+
+atom, f = quadri_gaussian.get_best()
+
+print(atom)
+print("f(x, y): " + str(f))
