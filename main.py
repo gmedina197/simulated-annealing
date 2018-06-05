@@ -23,12 +23,15 @@ class Problem:
 
     def perturbate(self, index, lower_perturbation, upper_perturbation):
         self.candidate = dict()
-        for key in self.population[index]:
-            self.candidate[key] = self.population[index][key] + random.uniform(lower_perturbation, upper_perturbation)
-            if (self.candidate[key] > self.getUpperInterval()[key]):
-                self.candidate[key] = self.getUpperInterval()[key]
-            elif (self.candidate[key] < self.getLowerInterval()[key]):
-                self.candidate[key] = self.getLowerInterval()[key]
+        upper_interval = self.getUpperInterval()
+        lower_interval = self.getLowerInterval()
+        atom = self.population[index]
+        for key in atom:
+            self.candidate[key] = atom[key] + random.uniform(lower_perturbation, upper_perturbation)
+            if (self.candidate[key] > upper_interval[key]):
+                self.candidate[key] = upper_interval[key]
+            elif (self.candidate[key] < lower_interval[key]):
+                self.candidate[key] = lower_interval[key]
         return self.candidate
 
     def use_candidate(self, index):
@@ -67,10 +70,10 @@ class Senoidal(Problem):
 class QuadriGaussian(Problem):
 
     def getLowerInterval(self):
-        return {'x': -5.0, 'y': 5.0}
+        return {'x': -5.0, 'y': -5.0}
 
     def getUpperInterval(self):
-        return {'x': -5.0, 'y': 5.0}
+        return {'x': 5.0, 'y': 5.0}
 
     def get_value(self, atom):
         a = 0.97 * math.exp(- (math.pow(atom['x'] + 3, 2) + math.pow(atom['y'] + 3, 2)) / 5)
